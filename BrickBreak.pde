@@ -1,6 +1,6 @@
 Player myPlayer;
 Ball[] balls = new Ball[4]; 
-int ballsInPlay;
+int ballsInPlay, maxBalls;
 Brick[] row1 = new Brick[20];
 Brick[] row2 = new Brick[20];
 Brick[] row3 = new Brick[20];
@@ -22,6 +22,7 @@ void setup()
   colorMode(HSB, 360, 100, 100);
   size(1000, 1000);
   ballsInPlay = 1;
+  maxBalls = 5;
 
   xBrickStart = width/20;
   yBrickStart = height/10;
@@ -39,7 +40,7 @@ void setup()
 
   gameOn = false;
   gameOver = false;
-  
+
   buff = false;
   buffMax = 5;
 
@@ -87,16 +88,26 @@ void game()
   drawRow(row3);
   drawRow(row4);
 
-  if(buff)
+  if (buff)
   {
     myPowerUp.move();
     myPowerUp.drawPU();
-    if(checkPlayerToPU())
+    if (checkPlayerToPU())
     {
-      myPowerUp.display = false;
-      buff = false;
-      println(myPowerUp.type);
-      myPlayer.powerUp(myPowerUp.type);
+      if (myPowerUp.type != 1)
+      {
+        myPowerUp.display = false;
+        buff = false;
+        println(myPowerUp.type);
+        myPlayer.powerUp(myPowerUp.type);
+      }
+      else
+      {
+        if(ballsInPlay < maxBalls)
+        {
+          balls[ballsInPlay] = new Ball();
+        }
+      }
     }
   }
 
@@ -104,10 +115,13 @@ void game()
   myPlayer.direction();
   myPlayer.move();
 
-  balls[0].drawBall();
-  balls[0].moveBall();
-  balls[0].hitPlayer();
-  balls[0].hitWall();
+for(int b = 0; b < ballsInPlay; b++)
+{
+  balls[b].drawBall();
+  balls[b].moveBall();
+  balls[b].hitPlayer();
+  balls[b].hitWall();
+}
 
   brickHitBuffer--;
 }
@@ -138,7 +152,7 @@ void checkBrickToBall(Brick brick)
     }
     brick.display = false;
     brickAmount--;
-    if(int(random(10)) > 1 && !buff && buffMax > 0)
+    if (int(random(10)) > 1 && !buff && buffMax > 0)
     {
       buff = true;
       myPowerUp = new PowerUp(brick.xPos, brick.yPos, brick.hCol);
@@ -155,10 +169,10 @@ void checkBrickToBall(Brick brick)
 
 boolean checkPlayerToPU()
 {
-  if(myPlayer.centerX + myPlayer.len >= myPowerUp.xPos
-  && myPlayer.centerX - myPlayer.len <= myPowerUp.xPos + myPowerUp.len
-  && myPlayer.centerY + myPlayer.r >= myPowerUp.yPos
-  && myPlayer.centerY - myPlayer.r <= myPowerUp.yPos + myPowerUp.h)
+  if (myPlayer.centerX + myPlayer.len >= myPowerUp.xPos
+    && myPlayer.centerX - myPlayer.len <= myPowerUp.xPos + myPowerUp.len
+    && myPlayer.centerY + myPlayer.r >= myPowerUp.yPos
+    && myPlayer.centerY - myPlayer.r <= myPowerUp.yPos + myPowerUp.h)
   {
     return true;
   }

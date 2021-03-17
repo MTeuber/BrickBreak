@@ -60,6 +60,7 @@ class Ball
     } else
       if (yPos - r > height)
       {
+        
         gameOver = true;
       }
     {

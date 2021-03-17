@@ -4,7 +4,7 @@ class PowerUp
   float len, h;
   int type;
   float hCol, sCol, bCol;
-  String text;
+  String textPU;
   float speed;
   boolean display;
 
@@ -19,15 +19,15 @@ class PowerUp
     hCol = col;
     sCol = 100;
     bCol = 100;
-    type = int(random(1));
+    type = int(random(2));
     display = true;
     if(type == 0)
     {
-      text = "EB";
+      textPU = "G";
     }
     else
     {
-      text = "G";
+      textPU = "EB";
     }
   }
   
@@ -47,6 +47,10 @@ class PowerUp
     fill(hCol, sCol, bCol);
     stroke(hCol, sCol, bCol);
     rect(xPos, yPos, len, h);
+    fill(0);
+    textSize(h);
+    textAlign(CENTER);
+    text(textPU,xPos+len/2,yPos+h*9/10);
   }
   
 }
