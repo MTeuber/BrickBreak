@@ -4,6 +4,7 @@ class Ball
   float col;
   float xDir, yDir, speed;
   int xHitBuffer, yHitBuffer, pHitBuffer;
+  boolean display;
 
   Ball()
   {
@@ -18,13 +19,17 @@ class Ball
     xHitBuffer = 0;
     yHitBuffer = 0;
     pHitBuffer = 0;
+    display = true;
   }
 
   void drawBall()
   {
-    fill(col);
-    stroke(col);
-    circle(xPos, yPos, 2*r);
+    if (display)
+    {
+      fill(col);
+      stroke(col);
+      circle(xPos, yPos, 2*r);
+    }
   }
 
   void moveBall()
@@ -49,8 +54,9 @@ class Ball
     pHitBuffer--;
   }
 
-  void hitWall()
+  boolean hitWall()
   {
+    boolean out = false;
     if (xHitBuffer < 0 && (xPos - r < 0  || xPos + r > width))
     {
       newDir(true);
@@ -60,13 +66,13 @@ class Ball
     } else
       if (yPos - r > height)
       {
-        
-        gameOver = true;
+        out = true;
       }
     {
       xHitBuffer--;
       yHitBuffer--;
     }
+    return out;
   }
 
   void newDir(boolean hitOnX)

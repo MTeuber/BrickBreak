@@ -1,6 +1,9 @@
+// Declaring gam variables
 Player myPlayer;
 Ball[] balls = new Ball[4]; 
 int ballsInPlay, maxBalls;
+int  rowAmount = 4;
+Brick[][] rows;
 Brick[] row1 = new Brick[20];
 Brick[] row2 = new Brick[20];
 Brick[] row3 = new Brick[20];
@@ -8,13 +11,14 @@ Brick[] row4 = new Brick[20];
 float xBrickStart, yBrickStart;
 int brickHitBuffer;
 
+// Buff handling
 PowerUp myPowerUp;
-
 boolean buff;
 int buffMax;
 
 int brickAmount;
 
+// game state
 boolean gameOn, gameOver, gameWon;
 
 void setup()
@@ -22,7 +26,7 @@ void setup()
   colorMode(HSB, 360, 100, 100);
   size(1000, 1000);
   ballsInPlay = 1;
-  maxBalls = 5;
+  maxBalls = 4;
 
   xBrickStart = width/20;
   yBrickStart = height/10;
@@ -30,13 +34,9 @@ void setup()
 
   brickAmount = 80;
 
-  row1 = brickBuilder(xBrickStart, yBrickStart);
-  yBrickStart += 25;
-  row2 = brickBuilder(xBrickStart, yBrickStart);
-  yBrickStart += 25;
-  row3 = brickBuilder(xBrickStart, yBrickStart);
-  yBrickStart += 25;
-  row4 = brickBuilder(xBrickStart, yBrickStart);
+  rows = new Brick[20][4];
+
+  rowBuilder(xBrickStart, yBrickStart);
 
   gameOn = false;
   gameOver = false;
@@ -48,6 +48,7 @@ void setup()
   balls[0] = new Ball();
 }
 
+//Main
 void draw()
 {
   if (gameOver)
@@ -65,47 +66,50 @@ void draw()
   }
 }
 
-Brick[] brickBuilder(float xStart, float yStart)
+// build the rows of bricks
+void rowBuilder(float xStart, float yStart)
 {
-  Brick[] bricks = new Brick[20]; 
-  float brickCol = random(360);
-  for (int i = 0; i < 20; i++)
+  for (int j = 0; j < rowAmount; j++)
   {
-    bricks[i] = new Brick(xStart, yStart, brickCol);
-    xStart += 45;
-    brickCol = (brickCol + 2)%360;
+    float brickCol = random(360);
+    int xOffset = 0;
+    for (int i = 0; i < 20; i++)
+    {
+      rows[i][j] = new Brick(xStart + xOffset, yStart, brickCol);
+      xOffset += 45;
+      brickCol = (brickCol + 2)%360;
+    }
+    xOffset = 0;
+    yStart += 25;
   }
-  return bricks;
 }
 
-
+// The main game
 void game()
 {
   background(360);
 
-  drawRow(row1);
-  drawRow(row2);
-  drawRow(row3);
-  drawRow(row4);
+  drawRow(rows);                                    // Draws the rows
 
-  if (buff)
+  if (buff)                                         // buff handling, should be a new function
   {
     myPowerUp.move();
     myPowerUp.drawPU();
     if (checkPlayerToPU())
     {
+      myPowerUp.display = false;
+      buff = false;
+      println("PowerUp: " + myPowerUp.type);
       if (myPowerUp.type != 1)
       {
-        myPowerUp.display = false;
-        buff = false;
-        println(myPowerUp.type);
         myPlayer.powerUp(myPowerUp.type);
-      }
-      else
+      } else
       {
-        if(ballsInPlay < maxBalls)
+        if (ballsInPlay < maxBalls)
         {
           balls[ballsInPlay] = new Ball();
+          ballsInPlay++;
+          println("ballsInPlay: " + ballsInPlay);
         }
       }
     }
@@ -115,58 +119,102 @@ void game()
   myPlayer.direction();
   myPlayer.move();
 
-for(int b = 0; b < ballsInPlay; b++)
-{
-  balls[b].drawBall();
-  balls[b].moveBall();
-  balls[b].hitPlayer();
-  balls[b].hitWall();
-}
+  for (int b = 0; b < ballsInPlay; b++)
+  {
+    balls[b].drawBall();
+    balls[b].moveBall();
+    balls[b].hitPlayer();
+    if (balls[b].hitWall())                                // Returning true means a ball is OOB
+    {
+      balls[b].display = false;
+    }
+  }
 
+  ballCleanUp(ballsInPlay);
   brickHitBuffer--;
 }
 
-void drawRow(Brick[] row)
+// Draws all the rows
+void drawRow(Brick[][] rowsToDraw)
 {
-  for (int i = 0; i < 20; i++)
+  for (int j = 0; j < rowAmount; j++)
   {
-    if (row[i].display)
+    for (int i = 0; i < 20; i++)
     {
-      row[i].drawBrick();
-      checkBrickToBall(row[i]);
+      if (rowsToDraw[i][j].display)
+      {
+        rowsToDraw[i][j].drawBrick();
+        checkBrickToBall(rowsToDraw[i][j]);
+      }
     }
   }
 }
 
+// Checks if a brick is hit by a ball
 void checkBrickToBall(Brick brick)
 {
-  int hit = brick.hitByBall(balls[0].xPos, balls[0].yPos, balls[0].r);
-  if (hit > 0 && brickHitBuffer < 0)
+  int hit;
+  for (int k = 0; k < ballsInPlay; k++)
   {
-    if (hit == 1)
+    hit = brick.hitByBall(balls[k].xPos, balls[k].yPos, balls[k].r);
+    if (hit > 0 && brickHitBuffer < 0)                                  // hit = 0 means that the brick is not hit
     {
-      balls[0].newDir(false);
-    } else
-    {
-      balls[0].newDir(true);
-    }
-    brick.display = false;
-    brickAmount--;
-    if (int(random(10)) > 1 && !buff && buffMax > 0)
-    {
-      buff = true;
-      myPowerUp = new PowerUp(brick.xPos, brick.yPos, brick.hCol);
-    }
-    if (brickAmount == 0)
-    {
-      gameWon = true;
-      gameOver = true;
-    }
+      if (hit == 1)                                                     // hit = 1 means it's hit on x-axis
+      {
+        balls[k].newDir(false);
+      } else                                                            // hit = 2 means it's hit on y-axis
+      {
+        balls[k].newDir(true);
+      }
+      brick.display = false;
+      brickAmount--;
+      if (int(random(10)) > 1 && !buff && buffMax > 0)
+      {
+        buff = true;
+        myPowerUp = new PowerUp(brick.xPos, brick.yPos, brick.hCol);
+      }
+      if (brickAmount == 0)
+      {
+        gameWon = true;
+        gameOver = true;
+      }
 
-    brickHitBuffer = 3;
+      brickHitBuffer = 3;
+    }
   }
 }
 
+// checks if aren't being displayed and removes them
+void ballCleanUp(int ballsInPlayCurrent)
+{
+  int offset = 0;
+  if (ballsInPlayCurrent == 1)
+  {
+    if (!balls[0].display)
+    {
+      ballsInPlay--;
+      println("ballsInPlay " + ballsInPlay);
+      gameOver = true;
+    }
+  } else
+  {
+    for (int i = 0; i < ballsInPlayCurrent-1; i++)
+    {
+      if (!balls[i].display)
+      {
+        offset++;
+        ballsInPlay--;
+        println("ballsInPlay: " + ballsInPlay);
+      }
+      if (offset > 0)
+      {
+        balls[i] = balls[i+offset];
+      }
+    }
+  }
+}
+
+// Checks if player gets a power up
 boolean checkPlayerToPU()
 {
   if (myPlayer.centerX + myPlayer.len >= myPowerUp.xPos
@@ -174,6 +222,7 @@ boolean checkPlayerToPU()
     && myPlayer.centerY + myPlayer.r >= myPowerUp.yPos
     && myPlayer.centerY - myPlayer.r <= myPowerUp.yPos + myPowerUp.h)
   {
+    println("Power up gotten");
     return true;
   }
   return false;
